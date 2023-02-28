@@ -8,57 +8,36 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class Java11 {
+public class JavaConcurrency {
 	
-	public static void collectionFactory() {
+	static volatile int count = 0; // -> not safe code
+	static AtomicInteger atomicCount = new AtomicInteger();
+	
+	public static void main(String[] args) throws InterruptedException {
 		
-		Map<String, String> map;
-		try {
-			map = Map.of("key", "value");
-			map.put("new", "new Value"); // --> will throw Unsupport Operation
-			
-		} catch (UnsupportedOperationException e) {
-			map = new HashMap<>(Map.of("key", "value"));
-			map.put("new", "new Value");
-			System.out.println(map);
-		}
-	}
-	
-	public static void httpSupport() {
+		Thread run1 = new Thread(() -> {
+			for (int i = 0; i < 1000; i++) {
+				count++;
+				atomicCount.incrementAndGet();
+			}
+		});
 		
-		try {
-			var client = HttpClient.newBuilder().build();
-			var uri = new URI("https://google.com");
-			var request = HttpRequest.newBuilder(uri).build();
-			var response = client.send(
-				request,
-				HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
-			System.out.println(response.body());
-		} catch (Exception e) {
-			System.err.println(e);
-		}
-	}
-	
-	public static void httpSupportAsync() {
-		try {
-			var client = HttpClient.newBuilder().build();
-			var uri = new URI("https://google.com");
-			var req = HttpRequest.newBuilder(uri).build();
-			var handler = HttpResponse.BodyHandlers.ofString();
-			
-			CompletableFuture.allOf(
-				client.sendAsync(req, handler).thenAccept((resp) -> System.out.println( "1: " + resp.statusCode())),
-				client.sendAsync(req, handler).thenAccept((resp) -> System.out.println( "2: " + resp.statusCode())),
-				client.sendAsync(req, handler).thenAccept((resp) -> System.out.println( "3: " + resp.statusCode()))
-			).join();
-		} catch (Exception e) {
-			System.err.println(e);
-		}
-	}
-	
-	public static void main(String[] args) {
-		// collectionFactory();
-		httpSupportAsync();
+		Thread run2 = new Thread(() -> {
+			for (int i = 0; i < 1000; i++) {
+				count++;
+				atomicCount.incrementAndGet();
+			}
+		});
+		
+		run1.start();
+		run2.start();;
+		
+		run1.join();
+		run2.join();
+		
+		System.out.println("Count " + count);
+		System.out.println("Atomic  Count " + atomicCount.get());
 	}
 }

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class Java11 {
+public class JavaVersion {
 	
 	public static void collectionFactory() {
 		
